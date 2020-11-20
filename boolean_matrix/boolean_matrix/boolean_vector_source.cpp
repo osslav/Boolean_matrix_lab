@@ -1,7 +1,4 @@
 #include "boolean_vector.h"
-#include <iostream>
-using namespace std;
-
 
 // Вектор 1110110001 хранится в памяти как:  00000011 10110001 
 
@@ -16,6 +13,30 @@ BoolVector::BoolVector(int count)
 
 	for (int i = 0; i < memory_; i++) vector_[i] = 0;
 }
+
+
+BoolVector::BoolVector(int count, bool value)
+{
+	count_ = count;
+	memory_ = (count_ + 7) / 8;
+
+	vector_ = new unsigned char[memory_];
+
+	if (value)
+	{
+		unsigned char mask = ~0;
+		mask >>= (memory_ * 8 - count_);
+		
+		for (int i = 0; i < memory_; i++) vector_[i] = mask;
+	}
+	else
+	{	
+		for (int i = 0; i < memory_; i++) vector_[i] = 0;
+	
+
+	}
+}
+
 
 BoolVector::BoolVector(int count, unsigned char* string, int countString)
 {
@@ -34,15 +55,9 @@ BoolVector::BoolVector(int count, unsigned char* string, int countString)
 	vector_[0] &= mask;
 }
 
-BoolVector::BoolVector(const char* stringVector)
+BoolVector::BoolVector(int count, const char* stringVector)
 {
-	count_ = 0;
-	while (stringVector[count_] != '\0')
-	{
-		if ((stringVector[count_] != '0') && (stringVector[count_] != '1')) throw errorSymbolString;
-		count_++;
-	}
-
+	count_ = count;
 	memory_ = (count_ + 7) / 8;
 	vector_ = new unsigned char[memory_];
 
@@ -50,11 +65,14 @@ BoolVector::BoolVector(const char* stringVector)
 	vector_[0] = 0;
 	for (int i = memory_ * 8 - count_; i < memory_ * 8; i++)
 	{
+		if ((stringVector[i - memory_ * 8 + count_] != '0') && (stringVector[i - memory_ * 8 + count_] != '1')) throw errorSymbolString;
+		
 		if ((i % 8 == 0) && (i != 0))
 		{
 			indexVector++;
 			vector_[indexVector] = 0;
 		}
+		
 		vector_[indexVector] <<= 1;
 		vector_[indexVector] += stringVector[i - memory_ * 8 + count_] - '0';
 	}
@@ -69,25 +87,40 @@ BoolVector::BoolVector(const BoolVector& copy)
 	for (int i = 0; i < memory_; i++) vector_[i] = copy.vector_[i];
 }
 
+
+void BoolVector::reloadVector(int count)
+{
+	if (count < 0) errorCountLessZero;
+	if (count != count_)
+	{
+		delete vector_;
+		memory_ = (count_ + 7) / 8;
+		count_ = count;
+		vector_ = new unsigned char[count];
+	}
+	for (int i = 0; i < memory_; i++) vector_[i] = 0;
+};
+
+
 void BoolVector::outputFull()
 {
 	int index = 0;
 	unsigned char mask = 1 << 7;
 	while (index < memory_ * 8)
 	{
-		cout << '|';
-		if ((mask & vector_[index / 8]) != 0) cout << '1';
-		else cout << '0';
+		std::cout << '|';
+		if ((mask & vector_[index / 8]) != 0) std::cout << '1';
+		else std::cout << '0';
 
 		index++;
 		mask = mask >> 1;
 		if (mask == 0)
 		{
 			mask = 1 << 7;
-			cout << "|  ";
+			std::cout << "|  ";
 		}
 	}
-	cout << '\n';
+	std::cout << '\n';
 }
 
 void BoolVector::invertVector()
@@ -96,6 +129,17 @@ void BoolVector::invertVector()
 	unsigned char mask = ~0;
 	mask = mask >> (memory_ * 8 - count_);
 	vector_[0] = vector_[0] & mask;
+}
+
+BoolVector BoolVector::operator ~()
+{
+	BoolVector result(this->count_);
+	for (int i = 0; i < memory_; i++) result.vector_[i] = ~vector_[i];
+	unsigned char mask = ~0;
+	mask = mask >> (memory_ * 8 - count_);
+	result.vector_[0] = result.vector_[0] & mask;
+
+	return result;
 }
 
 void BoolVector::invertInd(int index)
@@ -131,7 +175,7 @@ void BoolVector::setZeroInd(int index, int count)
 		index += count + 1;
 		count *= -1;
 	}
-	if ((index < 0) || (index + count >= count_)) throw errorRangeIndexOutVector;
+	if ((index < 0) || (index + count > count_)) throw errorRangeIndexOutVector;
 
 
 	int byte = memory_ - 1 - index / 8;
@@ -158,7 +202,7 @@ void BoolVector::setOneInd(int index, int count)
 		index += count + 1;
 		count *= -1;
 	}
-	if ((index < 0) || (index + count >= count_)) throw errorRangeIndexOutVector;
+	if ((index < 0) || (index + count > count_)) throw errorRangeIndexOutVector;
 
 
 	int byte = memory_ - 1 - index / 8;
@@ -197,7 +241,7 @@ int BoolVector::searchWeight()
 
 BoolVector BoolVector::operator &(BoolVector term)
 {
-	if (memory_ > term.memory_)
+	if (count_ > term.count_)
 	{
 		BoolVector result(*this);
 		for (int i = 0; i < term.memory_; i++) result.vector_[i + memory_ - term.memory_] &= term.vector_[i];
@@ -215,7 +259,7 @@ BoolVector BoolVector::operator &(BoolVector term)
 
 void BoolVector::operator &=(BoolVector term)
 {
-	if (memory_ > term.memory_)
+	if (count_ > term.count_)
 	{
 		for (int i = 0; i < memory_ - term.memory_; i++) vector_[i] = 0;
 		for (int i = 0; i < term.memory_; i++) vector_[i + memory_ - term.memory_] &= term.vector_[i];
@@ -238,7 +282,7 @@ void BoolVector::operator &=(BoolVector term)
 
 BoolVector BoolVector::operator |(BoolVector term)
 {
-	if (memory_ > term.memory_)
+	if (count_ > term.count_)
 	{
 		BoolVector result(*this);
 		for (int i = 0; i < term.memory_; i++) result.vector_[i + memory_ - term.memory_] |= term.vector_[i];
@@ -255,7 +299,7 @@ BoolVector BoolVector::operator |(BoolVector term)
 
 void BoolVector::operator |=(BoolVector term)
 {
-	if (memory_ > term.memory_)  for (int i = 0; i < term.memory_; i++) vector_[i + memory_ - term.memory_] |= term.vector_[i];
+	if (count_ > term.count_)  for (int i = 0; i < term.memory_; i++) vector_[i + memory_ - term.memory_] |= term.vector_[i];
 	else
 	{
 		unsigned char* result;
@@ -332,7 +376,7 @@ BoolVector& BoolVector::operator =(const BoolVector& copy)
 	return *this;
 }
 
-ostream& operator << (ostream& f, BoolVector& vector)
+std::ostream& operator << (std::ostream& f, const BoolVector& vector)
 {
 	int index = 8 * vector.memory_ - vector.count_;
 	unsigned char mask = 1 << (7 - index);
@@ -348,40 +392,25 @@ ostream& operator << (ostream& f, BoolVector& vector)
 	return f;
 }
 
-istream& operator >> (istream& f, BoolVector& vector)
+std::istream& operator >> (std::istream& f, BoolVector& vector)
 {
-	cout << "Enter the number of bits of the boolean vector: ";
-	f >> vector.count_;
+	char newVector[MAX_COUNT_FOR_INPUT];
 
-	while (vector.count_ < 0)
+	int count = 0;
+	
+	std::cin >> newVector;
+	
+	while ((count < MAX_COUNT_FOR_INPUT) && (newVector[count] != '\0'))
 	{
-		cout << "Number of bits can't be < 0. Enter again:  ";
-		f >> vector.count_;
+		count++;
 	}
 
-	if (vector.memory_ != (vector.count_ + 7) / 8)
-	{
-		vector.memory_ = (vector.count_ + 7) / 8;
-		delete vector.vector_;
-		vector.vector_ = new unsigned char[vector.memory_];
-	}
-	for (int i = 0; i < vector.memory_; i++) vector.vector_[i] = 0;
+	//std::cout << count;
 
-	char nextSymbol;
-	f >> nextSymbol;
-	for (int i = vector.memory_ * 8 - vector.count_; i < vector.memory_ * 8; i++)
-	{
-		if ((nextSymbol != '0') && (nextSymbol != '1'))
-		{
-			cout << "Error. Enter " << i << " bit again: ";
-			f >> nextSymbol;
-		}
+	BoolVector result(count, newVector);
 
-		vector.vector_[i / 8] <<= 1;
-		if (nextSymbol == '1') vector.vector_[i / 8]++;
+	vector = result;
 
-		if (i != vector.memory_ * 8 - 1) f >> nextSymbol;
-	}
 	return f;
 }
 

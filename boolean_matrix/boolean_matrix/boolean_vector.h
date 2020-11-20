@@ -4,14 +4,12 @@
 #define boolean_vector
 
 
-
 #include <iostream>
-using namespace std;
 
 int const DEFAULT_COUNT = 8;
+int const MAX_COUNT_FOR_INPUT = 64;
 
-
-enum ErrorCode
+enum ErrorCodeBoolVector
 {
 	errorCountLessZero = 1,
 	errorStringEmpty,
@@ -27,22 +25,27 @@ enum ErrorCode
 class BoolVector
 {
 	unsigned char* vector_;
-	int count_;        //длина вектора
-	int memory_;       //количество выделенных байт
+	int count_;									//длина вектора
+	int memory_;								//количество выделенных байт
 
 public:
 	BoolVector(int count = DEFAULT_COUNT);
-	BoolVector(int cout, unsigned char* string, int countString);
-	BoolVector(const char* stringVector);
+	BoolVector(int count, bool value);
+	BoolVector(int count, unsigned char* string, int countString);
+	BoolVector(int count, const char* stringVector);
 	BoolVector(const BoolVector& copy);
-	~BoolVector() { delete vector_; };
+	~BoolVector() { delete[] vector_; };
+
+	void reloadVector(int count);														//новый метод
+	int getCount() { return count_; };													//новый метод
 
 	void outputFull();
 
-	friend ostream& operator << (ostream& f, BoolVector& vector);
-	friend istream& operator >> (istream& f, BoolVector& vector);
+	friend std::ostream& operator << (std::ostream& f, const BoolVector& vector);
+	friend std::istream& operator >> (std::istream& f, BoolVector& vector);				//функция переписана
 
 	void invertVector();
+	BoolVector operator ~();															//новый метод
 	void invertInd(int index);
 
 	void setZero();
@@ -67,7 +70,7 @@ public:
 
 	BoolVector operator <<(int count);
 
-	BoolVector operator >>(int count);
+	BoolVector operator >>(int count);                  
 
 	void operator <<=(int count);
 
