@@ -17,6 +17,7 @@ BoolVector::BoolVector(int count)
 
 BoolVector::BoolVector(int count, bool value)
 {
+	if (count < 0) throw errorCountLessZero;
 	count_ = count;
 	memory_ = (count_ + 7) / 8;
 
@@ -40,6 +41,7 @@ BoolVector::BoolVector(int count, bool value)
 
 BoolVector::BoolVector(int count, unsigned char* string, int countString)
 {
+	if (count < 0) throw errorCountLessZero;
 	count_ = count;
 	memory_ = (count_ + 7) / 8;
 
@@ -57,25 +59,31 @@ BoolVector::BoolVector(int count, unsigned char* string, int countString)
 
 BoolVector::BoolVector(int count, const char* stringVector)
 {
+	if (count < 0) throw errorCountLessZero;
 	count_ = count;
 	memory_ = (count_ + 7) / 8;
 	vector_ = new unsigned char[memory_];
 
-	int indexVector = 0;
-	vector_[0] = 0;
-	for (int i = memory_ * 8 - count_; i < memory_ * 8; i++)
+	if (memory_ != 0)
 	{
-		if ((stringVector[i - memory_ * 8 + count_] != '0') && (stringVector[i - memory_ * 8 + count_] != '1')) throw errorSymbolString;
-		
-		if ((i % 8 == 0) && (i != 0))
+
+		int indexVector = 0;
+		vector_[0] = 0;
+		for (int i = memory_ * 8 - count_; i < memory_ * 8; i++)
 		{
-			indexVector++;
-			vector_[indexVector] = 0;
+			if ((stringVector[i - memory_ * 8 + count_] != '0') && (stringVector[i - memory_ * 8 + count_] != '1')) throw errorSymbolString;
+
+			if ((i % 8 == 0) && (i != 0))
+			{
+				indexVector++;
+				vector_[indexVector] = 0;
+			}
+
+			vector_[indexVector] <<= 1;
+			vector_[indexVector] += stringVector[i - memory_ * 8 + count_] - '0';
 		}
-		
-		vector_[indexVector] <<= 1;
-		vector_[indexVector] += stringVector[i - memory_ * 8 + count_] - '0';
 	}
+
 }
 
 BoolVector::BoolVector(const BoolVector& copy)
@@ -94,33 +102,38 @@ void BoolVector::reloadVector(int count)
 	if (count != count_)
 	{
 		delete vector_;
-		memory_ = (count_ + 7) / 8;
+		memory_ = (count + 7) / 8;
 		count_ = count;
-		vector_ = new unsigned char[count];
+		vector_ = new unsigned char[memory_];
 	}
 	for (int i = 0; i < memory_; i++) vector_[i] = 0;
+
 };
 
 
 void BoolVector::outputFull()
 {
-	int index = 0;
-	unsigned char mask = 1 << 7;
-	while (index < memory_ * 8)
+	if (count_ == 0) std::cout << "Vector is empty.\n";
+	else
 	{
-		std::cout << '|';
-		if ((mask & vector_[index / 8]) != 0) std::cout << '1';
-		else std::cout << '0';
-
-		index++;
-		mask = mask >> 1;
-		if (mask == 0)
+		int index = 0;
+		unsigned char mask = 1 << 7;
+		while (index < memory_ * 8)
 		{
-			mask = 1 << 7;
-			std::cout << "|  ";
+			std::cout << '|';
+			if ((mask & vector_[index / 8]) != 0) std::cout << '1';
+			else std::cout << '0';
+
+			index++;
+			mask = mask >> 1;
+			if (mask == 0)
+			{
+				mask = 1 << 7;
+				std::cout << "|  ";
+			}
 		}
+		std::cout << '\n';
 	}
-	std::cout << '\n';
 }
 
 void BoolVector::invertVector()
@@ -269,7 +282,7 @@ void BoolVector::operator &=(BoolVector term)
 		unsigned char* result;
 		result = new unsigned char[term.memory_];
 
-		for (int i = 0; i < memory_ - term.memory_; i++) result[i] = 0;
+		for (int i = 0; i < term.memory_ - memory_; i++) result[i] = 0;                  //ошибочный вариант: for (int i = 0; i < memory_ - term.memory_; i++) result[i] = 0;    
 		for (int i = term.memory_ - memory_; i < term.memory_; i++) result[i] = term.vector_[i];
 		for (int i = 0; i < memory_; i++) result[i + term.memory_ - memory_] &= vector_[i];
 
@@ -378,16 +391,20 @@ BoolVector& BoolVector::operator =(const BoolVector& copy)
 
 std::ostream& operator << (std::ostream& f, const BoolVector& vector)
 {
-	int index = 8 * vector.memory_ - vector.count_;
-	unsigned char mask = 1 << (7 - index);
-	while (index < vector.memory_ * 8)
+	if (vector.count_ == 0) std::cout << "Vector is empty.";
+	else
 	{
-		if ((mask & vector.vector_[index / 8]) != 0) f << '1';
-		else f << '0';
+		int index = 8 * vector.memory_ - vector.count_;
+		unsigned char mask = 1 << (7 - index);
+		while (index < vector.memory_ * 8)
+		{
+			if ((mask & vector.vector_[index / 8]) != 0) f << '1';
+			else f << '0';
 
-		index++;
-		mask = mask >> 1;
-		if (mask == 0) mask = 1 << 7;
+			index++;
+			mask = mask >> 1;
+			if (mask == 0) mask = 1 << 7;
+		}
 	}
 	return f;
 }

@@ -38,6 +38,8 @@ public:
 
 	void reloadVector(int count);														//новый метод
 	int getCount() { return count_; };													//новый метод
+	int getMemory() { return memory_; };
+
 
 	void outputFull();
 

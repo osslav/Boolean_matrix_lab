@@ -72,16 +72,23 @@ BoolMatrix::BoolMatrix(const BoolMatrix& copy)
 
 void BoolMatrix::outputFull()
 {
-	for (int i = 0; i < strCount_; i++)
+	if (strCount_ == 0) std::cout << "Matrix is empty.\n";
+	else
 	{
-		matrix_[i].outputFull();
+		std::cout << "Matrix:\n";
+		for (int i = 0; i < strCount_; i++) matrix_[i].outputFull();
 	}
 }
 
 
 std::ostream& operator << (std::ostream& f, BoolMatrix& matrix)
 {
-	for (int i = 0; i < matrix.strCount_; i++) f << matrix.matrix_[i] << '\n';
+	if (matrix.strCount_ == 0) std::cout << "Matrix is empty.\n";
+	else
+	{
+		std::cout << "Matrix:\n";
+		for (int i = 0; i < matrix.strCount_; i++) f << matrix.matrix_[i] << '\n';
+	}
 	return f;
 };
 
@@ -89,10 +96,22 @@ std::ostream& operator << (std::ostream& f, BoolMatrix& matrix)
 std::istream& operator >> (std::istream& f, BoolMatrix& matrix)
 {
 	int oldStrCount = matrix.strCount_;
-	std::cout << "Enter count string: ";
-	f >> matrix.strCount_;
-	std::cout << "Enter lenth string: ";
+	std::cout << "Enter row count: ";
+	f >> matrix.strCount_;		
+	while (matrix.strCount_ < 0)
+	{
+		std::cout << "Row  count must be > -1. Enter it again: ";
+		f >> matrix.strCount_;
+	}
+	
+	std::cout << "Enter coloumn count: ";
 	f >> matrix.colCount_;
+	while (matrix.colCount_ < 0)
+	{
+		std::cout << "Coloumn count must be > -1. Enter it again: ";
+		f >> matrix.strCount_;
+	}
+
 	
 	if (oldStrCount != matrix.strCount_)
 	{
@@ -132,8 +151,8 @@ int BoolMatrix::searchWeight(int strIndex)
 
 BoolVector BoolMatrix::disjunctionAllStr()
 {
-	BoolVector result(matrix_[0]);
-	for (int i = 1; i < strCount_; i++) result |= matrix_[i];
+	BoolVector result(0);
+	for (int i = 0; i < strCount_; i++) result |= matrix_[i];
 
 	return result;
 };
@@ -141,10 +160,17 @@ BoolVector BoolMatrix::disjunctionAllStr()
 
 BoolVector BoolMatrix::conjunctionAllStr()
 {
-	BoolVector result(matrix_[0]);
-	for (int i = 1; i < strCount_; i++) result &= matrix_[i];
-
-	return result;
+	if (strCount_ != 0)
+	{
+		BoolVector result(matrix_[0]);
+		for (int i = 1; i < strCount_; i++) result &= matrix_[i];
+		return result;
+	}
+	else 
+	{
+		BoolVector result(0);
+		return result;
+	}
 };
 
 void BoolMatrix::invertInd(int strInd, int colInd, int count)
@@ -156,7 +182,7 @@ void BoolMatrix::invertInd(int strInd, int colInd, int count)
 	}
 
 	if ((colInd + count > colCount_) || (colInd < 0)) throw errorColIndexOutRange;
-	if ((strInd > strCount_) || (strInd < 0)) throw errorStrIndexOutRange;
+	if ((strInd >= strCount_) || (strInd < 0)) throw errorStrIndexOutRange;
 
 	for (int i = 0; i < count; i++)
 		matrix_[strInd].invertInd(colInd + i);
@@ -182,7 +208,7 @@ BoolMatrix& BoolMatrix::operator =(const BoolMatrix& copy)
 
 BoolVector& BoolMatrix::operator [](int strInd)
 {
-	if ((strInd > strCount_) || (strInd < 0)) throw errorStrIndexOutRange;
+	if ((strInd >= strCount_) || (strInd < 0)) throw errorStrIndexOutRange;
 	return matrix_[strInd];
 }
 

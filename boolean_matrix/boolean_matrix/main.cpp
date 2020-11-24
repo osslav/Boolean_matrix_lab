@@ -6,15 +6,16 @@ int main()
 {
 	try
 	{
+		
 		srand(time(NULL));
 		char** matr;
 		matr = new char*[16];
 		for (int i = 0; i < 16; i++)
 		{
 			matr[i] = new char[16];
-			for (int j = 0; j < 16; j++) matr[i][j] = '0' + (rand() % 2);
+			for (int j = 0; j < 16; j++) matr[i][j] = '1';//'0' + (rand() % 2);
 		}
-
+/*
 
 		BoolMatrix test1(matr, 9, 9);
 		std::cout << test1 << '\n';
@@ -47,6 +48,25 @@ int main()
 
 		std::cin >> a;
 		std::cout << a;
+*/
+		
+
+		BoolMatrix A(0, 2), B(matr, 8, 3);
+	
+		//std::cout << A << '\n';
+		//A.outputFull();
+		//B.outputFull();
+		std::cout << B.conjunctionAllStr() << '\n';
+		std::cout << '\n';
+		//B.conjunctionAllStr().outputFull();
+
+		//BoolVector a(0), b(8, true);
+		//a &= b;
+		//b = b & b;
+		//std::cout << b;
+		//char arr[2][3] = { "10", "01"};
+		//char** arr_ = arr;
+		//std::cout << **(arr + 2);
 
 		for (int i = 0; i < 16; i++) delete[]matr[i];
 		delete[]matr;
